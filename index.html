@@ -104,7 +104,14 @@ function check(){if(RO)return;const h=iso()+new Date().getHours();flat().forEach
  if(d<0&&S.n[t.id]!=h){S.n[t.id]=h;toast(`VENCIDA: ${t.title} (${l.name}) hace ${-d} día(s)`)}
  else if(d>=0&&d<=2&&S.n[t.id]!=iso()){S.n[t.id]=iso();toast(`Vence ${d?'en '+d+' días':'HOY'}: ${t.title} (${l.name})`)}});save()}
 document.addEventListener('click',()=>{if('Notification'in window&&Notification.permission=='default')Notification.requestPermission()},{once:true});
-const FB_CFG=null; // Pega aquí tu firebaseConfig, ej: {apiKey:"...",authDomain:"...",projectId:"...",appId:"..."} y los usuarios solo verán correo y contraseña
+const FB_CFG={apiKey: "AIzaSyDLrBTBZ6bmxpP0Rgu59vzciDLFGKrhXio",
+  authDomain: "mcg-agenda.firebaseapp.com",
+  projectId: "mcg-agenda",
+  storageBucket: "mcg-agenda.firebasestorage.app",
+  messagingSenderId: "7937583324",
+  appId: "1:7937583324:web:45e3587ffa127d7dc26c19",
+  measurementId: "G-90VLFE35XX"
+}; // Pega aquí tu firebaseConfig, ej: {apiKey:"...",authDomain:"...",projectId:"...",appId:"..."} y los usuarios solo verán correo y contraseña
 let fb=null,uidU=null,uemail='',tm=null;
 function push(){if(RO||!fb||!uidU)return;if(1)fb.doc('users/'+uidU).set({u:S.u||Date.now(),json:JSON.stringify(S)}).catch(()=>{})}
 function saveCfg(){try{const c=new Function('return('+$('#cfg').value+')')();if(!c.apiKey)throw 0;localStorage.setItem('fbcfg',JSON.stringify(c));location.reload()}catch(e){alert('Pega la configuración tal como la entrega Firebase (debe incluir apiKey)')}}
