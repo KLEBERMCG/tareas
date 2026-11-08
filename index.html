@@ -80,7 +80,7 @@ function draw(keep){
  <button class="btn s" onclick="addAdv()">+ Anticipo</button><p>Anticipos: ${m(paid(t))}<br><span class="tot">Por cobrar: ${m(due(t))}</span></p>`:''}
  <h3>Documentos requeridos</h3>${t.docs.map((d,i)=>`<div class="chk"><input type="checkbox" ${d.ok?'checked':''} onchange="togDoc(${i})"> ${esc(d.n)} <small>${d.ok?'Entregado':'Pendiente'}</small></div>`).join('')}
  <button class="btn s" onclick="addDoc()">+ Documento</button>${uidU?'<h3>Comentarios</h3><div id="cmw"><div id="cm"></div><input id="cmt" placeholder="Escribe un comentario"><button class="btn s" onclick="sendCm()">Enviar</button></div>':''}<br><button class="btn x" onclick="delT()">Eliminar tarea</button>`}
- $('#ttl').textContent=ttl;if(keep&&N.t)return;a.innerHTML=(RO?'<div id="ban" class="card" style="background:#fff3cd;cursor:default"><div><b>Viendo a '+esc(RO.name)+'</b><small>Solo lectura · puedes comentar</small></div><button class="btn" onclick="exitView()">Salir</button></div>':'')+h;post();
+ $('#ttl').textContent=ttl;if(keep&&N.t)return;const kv={};['em','pw','ie','cfg'].forEach(i=>{const x=$('#'+i);if(x&&x.value)kv[i]=x.value});window.__kv=kv;a.innerHTML=(RO?'<div id="ban" class="card" style="background:#fff3cd;cursor:default"><div><b>Viendo a '+esc(RO.name)+'</b><small>Solo lectura · puedes comentar</small></div><button class="btn" onclick="exitView()">Salir</button></div>':'')+h;post();
 }
 function repView(){return`<div class="row"><div><label>Desde</label><input type="date" id="ra" value="${R.a}" onchange="R.a=this.value"></div><div><label>Hasta</label><input type="date" id="rb" value="${R.b}" onchange="R.b=this.value"></div></div>
 <label>Categoría</label><select onchange="R.cat=this.value"><option value="">Todas</option>${S.cats.map(c=>`<option value="${c.id}" ${R.cat==c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>
@@ -104,19 +104,16 @@ function check(){if(RO)return;const h=iso()+new Date().getHours();flat().forEach
  if(d<0&&S.n[t.id]!=h){S.n[t.id]=h;toast(`VENCIDA: ${t.title} (${l.name}) hace ${-d} día(s)`)}
  else if(d>=0&&d<=2&&S.n[t.id]!=iso()){S.n[t.id]=iso();toast(`Vence ${d?'en '+d+' días':'HOY'}: ${t.title} (${l.name})`)}});save()}
 document.addEventListener('click',()=>{if('Notification'in window&&Notification.permission=='default')Notification.requestPermission()},{once:true});
-const FB_CFG={apiKey: "AIzaSyDLrBTBZ6bmxpP0Rgu59vzciDLFGKrhXio",
-  authDomain: "mcg-agenda.firebaseapp.com",
-  projectId: "mcg-agenda",
-  storageBucket: "mcg-agenda.firebasestorage.app",
-  messagingSenderId: "7937583324",
-  appId: "1:7937583324:web:45e3587ffa127d7dc26c19",
-  measurementId: "G-90VLFE35XX"
-}; // Pega aquí tu firebaseConfig, ej: {apiKey:"...",authDomain:"...",projectId:"...",appId:"..."} y los usuarios solo verán correo y contraseña
+const FB_CFG=null; // Pega aquí tu firebaseConfig, ej: {apiKey:"...",authDomain:"...",projectId:"...",appId:"..."} y los usuarios solo verán correo y contraseña
 let fb=null,uidU=null,uemail='',tm=null;
 function push(){if(RO||!fb||!uidU)return;if(1)fb.doc('users/'+uidU).set({u:S.u||Date.now(),json:JSON.stringify(S)}).catch(()=>{})}
 function saveCfg(){try{const c=new Function('return('+$('#cfg').value+')')();if(!c.apiKey)throw 0;localStorage.setItem('fbcfg',JSON.stringify(c));location.reload()}catch(e){alert('Pega la configuración tal como la entrega Firebase (debe incluir apiKey)')}}
-function login(n){if(!fb)return alert('Sin conexión o configuración incorrecta');const a=firebase.auth(),e=$('#em').value,p=$('#pw').value;(n?a.createUserWithEmailAndPassword(e,p).then(c=>c.user.sendEmailVerification()):a.signInWithEmailAndPassword(e,p)).catch(x=>alert(x.message))}
-function reset(){const e=$('#em').value;if(!e)return alert('Escribe tu correo');firebase.auth().sendPasswordResetEmail(e).then(()=>alert('Te enviamos un correo para restablecer la contraseña')).catch(x=>alert(x.message))}
+const FE={'auth/invalid-email':'El correo no tiene un formato válido. Ejemplo: nombre@dominio.com','auth/missing-email':'Escribe tu correo.','auth/email-already-in-use':'Ese correo ya tiene una cuenta. Pulsa Entrar, o usa Olvidé mi contraseña.','auth/weak-password':'La contraseña es muy débil: usa al menos 6 caracteres.','auth/missing-password':'Escribe tu contraseña.','auth/invalid-credential':'Correo o contraseña incorrectos.','auth/wrong-password':'Correo o contraseña incorrectos.','auth/user-not-found':'No existe una cuenta con ese correo. Pulsa Crear cuenta.','auth/too-many-requests':'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.','auth/network-request-failed':'Sin conexión a internet.','auth/operation-not-allowed':'Falta activar Correo/contraseña en Firebase (Authentication › Sign-in method).','auth/unauthorized-domain':'Este dominio no está autorizado en Firebase (Authentication › Configuración › Dominios autorizados).','auth/invalid-api-key':'La configuración de Firebase es incorrecta (apiKey).'};
+const fe=x=>FE[x.code]||x.message;
+function login(n){if(!fb)return alert('Sin conexión o configuración de Firebase incorrecta');const a=firebase.auth(),e=$('#em').value.trim(),p=$('#pw').value;
+ if(!e)return alert('Escribe tu correo.');if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))return alert('El correo no tiene un formato válido. Ejemplo: nombre@dominio.com');if(!p)return alert('Escribe tu contraseña.');if(n&&p.length<6)return alert('La contraseña debe tener al menos 6 caracteres.');
+ (n?a.createUserWithEmailAndPassword(e,p).then(c=>c.user.sendEmailVerification()).then(()=>alert('Cuenta creada. Te enviamos un correo de verificación: ábrelo y luego vuelve a Cuenta y pulsa "Ya verifiqué".')):a.signInWithEmailAndPassword(e,p)).catch(x=>alert(fe(x)))}
+function reset(){const e=$('#em').value.trim();if(!e)return alert('Escribe tu correo');firebase.auth().sendPasswordResetEmail(e).then(()=>alert('Te enviamos un correo para restablecer la contraseña')).catch(x=>alert(fe(x)))}
 async function saveOut(fn,b64,mime){const C=window.Capacitor;if(C&&C.isNativePlatform&&C.isNativePlatform()){const P=C.Plugins,r=await P.Filesystem.writeFile({path:fn,data:b64,directory:'CACHE'});await P.Share.share({title:fn,url:r.uri})}else{const a=document.createElement('a');a.href='data:'+mime+';base64,'+b64;a.download=fn;a.click()}}
 async function sched(){if(RO)return;const LN=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.LocalNotifications;if(!LN)return;
  try{let p=await LN.checkPermissions();if(p.display!='granted')p=await LN.requestPermissions();if(p.display!='granted')return;
@@ -144,7 +141,7 @@ async function acceptInvite(){try{const u=firebase.auth().currentUser;if(!u)retu
  if(iv.exists&&iv.data().boss!=u.uid){const d={boss:iv.data().boss,bossEmail:iv.data().bossEmail,email:u.email.toLowerCase()};await fb.doc('members/'+u.uid).set(d);bossOf=d;toast('Ahora formas parte del equipo de '+d.bossEmail)}}catch(e){}}
 function accView(){
  if(!FB_CFG&&!localStorage.getItem('fbcfg'))return`<p>Para sincronizar, pega aquí la configuración de tu proyecto Firebase (ver README).</p><textarea id="cfg" rows="8" style="width:100%;font-size:14px" placeholder='{apiKey:"...",authDomain:"...",projectId:"...",appId:"..."}'></textarea><button class="btn" onclick="saveCfg()">Guardar configuración</button>`;
- if(!uidU)return`<label>Correo</label><input id="em" type="email"><label>Contraseña</label><input id="pw" type="password"><button class="btn" onclick="login(0)">Entrar</button><button class="btn s" onclick="login(1)">Crear cuenta</button><br><button class="btn s" onclick="reset()">Olvidé mi contraseña</button>`;
+ if(!uidU)return`<label>Correo</label><input id="em" type="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false"><label>Contraseña</label><input id="pw" type="password" autocomplete="current-password"><button class="btn" onclick="login(0)">Entrar</button><button class="btn s" onclick="login(1)">Crear cuenta</button><br><button class="btn s" onclick="reset()">Olvidé mi contraseña</button>`;
  const v=firebase.auth().currentUser.emailVerified;
  return`<p>Sincronización activa<br><b>${esc(uemail)}</b></p><p>${bossOf?'Perfil: asistente de <b>'+esc(bossOf.bossEmail)+'</b>':'Perfil: contador (jefe)'}</p>${v?'':'<p style="color:#c62828">Verifica tu correo: te enviamos un enlace. Luego pulsa el botón.</p><button class="btn s" onclick="acceptInvite().then(()=>draw())">Ya verifiqué</button>'}<button class="btn x" onclick="firebase.auth().signOut()">Cerrar sesión</button>`}
 function teamView(){return`<label>Correo del asistente</label><input id="ie" type="email" placeholder="asistente@correo.com"><button class="btn" onclick="invite()">Asociar asistente</button><p><small>El asistente crea su cuenta, verifica su correo y queda asociado automáticamente.</small></p><div id="tm">Cargando…</div>`}
@@ -164,7 +161,7 @@ async function loadCm(){const el=$('#cm');if(!el||!fb||!cuid())return;try{const 
  el.innerHTML=L.map(c=>`<div class="card" style="cursor:default"><div><b>${esc(c.name)}</b> <small>${new Date(c.at).toLocaleString()}</small>${esc(c.text)}</div></div>`).join('')||'<small>Sin comentarios</small>'}catch(e){el.textContent='No se pudieron cargar los comentarios'}}
 async function sendCm(){const i=$('#cmt'),x=i.value.trim();if(!x)return;try{await fb.collection('users/'+cuid()+'/comments').add({task:N.t,text:x,by:uidU,name:uemail.split('@')[0],at:Date.now()});i.value='';loadCm()}catch(e){alert('No se pudo enviar: '+e.message)}}
 async function newCm(){try{const last=+localStorage.getItem('lc_'+uidU)||0,q=await fb.collection('users/'+uidU+'/comments').where('at','>',last).get(),n=q.docs.filter(d=>d.data().by!=uidU).length;if(n)toast(`Tienes ${n} comentario(s) nuevo(s) en tus tareas`);localStorage.setItem('lc_'+uidU,Date.now())}catch(e){}}
-function post(){if(RO&&N.v!='rep')$('#app').querySelectorAll('input,select,textarea,button.btn').forEach(e=>{if(!e.closest('#cmw')&&!e.closest('#ban'))e.disabled=true});
+function post(){const kv=window.__kv||{};for(const i in kv){const x=$('#'+i);if(x)x.value=kv[i]}window.__kv=null;if(RO&&N.v!='rep')$('#app').querySelectorAll('input,select,textarea,button.btn').forEach(e=>{if(!e.closest('#cmw')&&!e.closest('#ban'))e.disabled=true});
  $('#n4').style.display=(uidU&&!bossOf)?'':'none';if(N.t)loadCm();if(N.v=='team')loadTeam();addMics()}
 let rec=null,micB=null,micI=null;
 const nat=()=>{const C=window.Capacitor;return C&&C.isNativePlatform&&C.isNativePlatform()&&C.Plugins.SpeechRecognition};
